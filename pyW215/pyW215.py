@@ -46,6 +46,8 @@ class SmartPlug(object):
         if self.use_legacy_protocol:
             _LOGGER.info("Enabled support for legacy firmware.")
         self._error_report = False
+        self.model_name = self.SOAPAction(Action="", responseElement="ModelName",
+                                    params = "")
 
     def moduleParameters(self, module):
         """Returns moduleID XML.
@@ -111,6 +113,20 @@ class SmartPlug(object):
         :param params: Any additional parameters required for performing request (i.e. RadioID, moduleID, ect)
         :return: Text enclosed in responseElement brackets
         """
+
+        # Set actions to skip for DSP-W110
+        dspw100_skipped_actions = ["GetCurrentPowerConsumption",
+                                    "GetPMWarningThreshold",
+                                    "GetCurrentTemperature"]
+
+        # Skip action for DSP-W110 if it is not supported
+        try:
+            if self.model_name == "DSP-W110" and Action in dspw100_skipped_actions:
+                _LOGGER.info("Skipping {} since it is not supported".format(Action))
+                return None
+        except:
+            _LOGGER.warning("Model check failed (normal on initial setup)")
+
         # Authenticate client
         auth = self.auth()
 
